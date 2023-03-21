@@ -1,6 +1,7 @@
 import threading
-import socket
-from Thread.ClientHandler import ClientHandler
+import asyncio
+import struct
+from Protocol import *
 
 class Listener(threading.Thread):
     def __init__(self):
@@ -9,20 +10,25 @@ class Listener(threading.Thread):
         self.port = 1215
 
     def run(self):
-        server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        server_socket.bind((self.host, self.port))
+        asyncio.run(self.listen(), debug=True)
 
-        server_socket.listen()
-        print("Listen Start")
+    async def listen(self):
+        server = await asyncio.start_server(self.handler, host=self.host, port=self.port)
 
-        # 접속대기 반복
+        print("serve forever1")
+        async with server:
+            print("serve forever2")
+            await server.serve_forever()
+
+    async def handler(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
+        url: str
         while True:
-            # 접속 대기
-            client_soc, addr = server_socket.accept()
-            print("Connected Client")
-            client = ClientHandler(client_soc)
-            client.daemon = True
-            client.start()
+            data: bytes = await reader.read(1024)
+            protocol, body = struct.unpack('bs', data)
+            print("Protocol: %d" % protocol)
+            print("Body: %s" % repr(body))
 
-        server_socket.close()
+            if protocol == EProtocol.INFO:
+                print("INFO")
+            elif protocol == EProtocol.URL:
+                print("URL")
