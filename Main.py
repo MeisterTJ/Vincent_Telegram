@@ -26,6 +26,8 @@ async def handler(reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
         data: bytes = await reader.read(1024)
         if not data:
             print("connection closed")
+            writer.close()
+            await writer.wait_closed()
             break
 
         print("data size %d" % len(data))
