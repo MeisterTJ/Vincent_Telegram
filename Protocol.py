@@ -3,7 +3,7 @@ from enum import Enum
 
 class EProtocol(Enum):
     INFO = 0
-    TOKEN = 1
+    BOT_INFO = 1
     COMMAND = 2
     CHAT = 3
 

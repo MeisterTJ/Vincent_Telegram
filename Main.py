@@ -19,7 +19,7 @@ async def start_server():
 async def handler(reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
     global chat_id
     token: str
-    bot: telegram.ext.ExtBot = None
+    bots = {}  #: telegram.ext.ExtBot = None
     buffer: bytes = b''
     while True:
         try:
@@ -52,17 +52,25 @@ async def handler(reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
 
             if protocol == EProtocol.INFO.value:
                 print("INFO")
-            elif protocol == EProtocol.TOKEN.value:
+            # 봇 정보
+            elif protocol == EProtocol.BOT_INFO.value:
                 try:
-                    print("token = %s" % body)
-                    bot = telegram.Bot(token=body)
+                    splits: list = body.split(";")
+                    name = splits[0]
+                    token = splits[1]
+                    bots.update({name: telegram.Bot(token=token)})
+                    print("bot = %s, token = %s" % name, token)
                 except Exception as e:
                     print(e)
                 print("Bot Connected : %s" % body)
+            # 메시지 날림
             elif protocol == EProtocol.CHAT.value:
-                if bot is not None:
+                splits: list = body.split(";")
+                name = splits[0]
+                message = splits[1]
+                if bots.__contains__(name):
                     try:
-                        result = await bot.send_message(chat_id=chat_id, text=body)
+                        result = await bots[name].send_message(chat_id=chat_id, text=message)
                         print(result)
                     except Exception as e:
                         print(e)
