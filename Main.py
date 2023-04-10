@@ -12,7 +12,6 @@ global chat_id
 
 async def start_server():
     server = await asyncio.start_server(handler, host=host, port=port)
-
     async with server:
         await server.serve_forever()
 
@@ -23,11 +22,16 @@ async def handler(reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
     bot: telegram.ext.ExtBot = None
     buffer: bytes = b''
     while True:
-        data: bytes = await reader.read(1024)
-        if not data:
-            print("connection closed")
-            writer.close()
-            await writer.wait_closed()
+        try:
+            data: bytes = await reader.read(1024)
+            if not data:
+                print("connection closed")
+                writer.close()
+                await writer.wait_closed()
+                break
+        except Exception as e:
+            print(e)
+            print("exception connection closed")
             break
 
         print("data size %d" % len(data))
@@ -50,6 +54,7 @@ async def handler(reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
                 print("INFO")
             elif protocol == EProtocol.TOKEN.value:
                 try:
+                    print("token = %s" % body)
                     bot = telegram.Bot(token=body)
                 except Exception as e:
                     print(e)
